@@ -3,3 +3,5 @@
 
 when you run the script it will automatically download all of the requirements for you
 any damage you cause with this code i will NOT be responsible for
+
+this is basically a mix of mine and other peoples scripts, enjoy.
